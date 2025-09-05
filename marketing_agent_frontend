@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Marketing Content Agent</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f8f9fa; }
+    .container { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
+    h1 { color: #2c3e50; text-align: center; }
+    textarea { width: 100%; height: 120px; margin: 15px 0; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; resize: vertical; }
+    textarea:focus { border-color: #007bff; outline: none; }
+    button { background: #007bff; color: #fff; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; width: 100%; }
+    button:hover { background: #0056b3; }
+    #result { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; white-space: pre-wrap; border-left: 4px solid #007bff; }
+    .loading { display: none; color: #007bff; text-align: center; margin: 20px 0; }
+    .examples { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 8px; }
+    .examples h3 { margin-top: 0; }
+    .example { cursor: pointer; padding: 8px; margin: 5px 0; background: #fff; border-radius: 4px; }
+    .example:hover { background: #007bff; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 Marketing Content Agent</h1>
+
+    <div>
+      <label for="goal"><strong>Enter your content goal:</strong></label>
+      <textarea id="goal" placeholder="Example: Create Facebook post about coffee shop opening tone: enthusiastic"></textarea>
+    </div>
+
+    <button id="generateBtn">Generate Content</button>
+
+    <div id="loading" class="loading">⏳ Generating content... Please wait</div>
+    <div id="result"></div>
+
+    <div class="examples">
+      <h3>💡 Example Prompts:</h3>
+      <div class="example" onclick="setGoal('Create Facebook post about coffee shop opening tone: enthusiastic')">Create Facebook post about coffee shop</div>
+      <div class="example" onclick="setGoal('Write blog article about digital marketing trends save as marketing-trends.md')">Write blog article about digital marketing</div>
+      <div class="example" onclick="setGoal('Make FB post promoting summer sale with 50% discount tone: casual')">Promote summer sale with discount</div>
+      <div class="example" onclick="setGoal('Create SEO brief for https://example.com tone: professional')">Create SEO brief for website</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://marketing-agent-backend-4nqq.onrender.com/agent"; // ✅ Render backend API
+
+    function setGoal(text) {
+      document.getElementById('goal').value = text;
+    }
+
+    async function generateContent() {
+      const goal = document.getElementById('goal').value.trim();
+      const resultDiv = document.getElementById('result');
+      const loading = document.getElementById('loading');
+
+      if (!goal) {
+        resultDiv.innerHTML = '⚠️ Please enter a goal first';
+        return;
+      }
+
+      loading.style.display = 'block';
+      resultDiv.innerHTML = '';
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ goal })
+        });
+
+        let data;
+        try { data = await response.json(); } catch { data = {}; }
+
+        if (response.ok) {
+          resultDiv.innerHTML = `<strong>✅ Success!</strong>\n\n${data.result ?? '(no result text)'}`;
+        } else {
+          resultDiv.innerHTML = `<strong>❌ Error:</strong> ${data.error || response.status + ' ' + response.statusText}`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<strong>❌ Network Error:</strong> Unable to reach API.\nCheck your internet connection or try again.`;
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+
+    // Bind click
+    document.getElementById('generateBtn').addEventListener('click', generateContent);
+
+    // Ctrl+Enter shortcut
+    document.getElementById('goal').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter' && e.ctrlKey) generateContent();
+    });
+  </script>
+</body>
+</html>
