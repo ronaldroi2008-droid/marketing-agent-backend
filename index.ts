@@ -9,6 +9,22 @@ import { fetch as undiciFetch } from 'undici';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+// Add this near the top of your file
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// For ES modules, get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Add this to your Express app setup
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Also make sure you're serving static files
+app.use(express.static(__dirname));
+
 const app = express();
 app.set('trust proxy', 1);
 
