@@ -8,22 +8,12 @@ import * as cheerio from 'cheerio';
 import { fetch as undiciFetch } from 'undici';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-
-// Add this near the top of your file
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 // For ES modules, get the directory name
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Add this to your Express app setup
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Also make sure you're serving static files
-app.use(express.static(__dirname));
 
 const app = express();
 app.set('trust proxy', 1);
@@ -39,21 +29,27 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '5mb' }));
 
-// Use undici's fetch (Node’s global fetch doesn’t support timeout)
+// Serve static files (CSS, JS, images) from the root directory
+app.use(express.static(__dirname));
+
+// Route for the root path - serve the HTML file
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Use undici's fetch (Node's global fetch doesn't support timeout)
 const fetch = undiciFetch;
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 // ---------- helper functions (fetchPageText, saveMarkdown, extractFilename, etc.) ----------
-// (Ilipat dito ang lahat ng helper functions na nasa VS Code mo. Huwag kalimutan baguhin ang
-// 'timeout' option: Node fetch/undici hindi nagtatanggap nito. Kung kailangan mo ng timeout,
-// kailangan mong gumamit ng AbortController; sa ngayon puwede mo itong alisin.)
+// (Add your helper functions here)
 
-// TODO: copy your helpers from VS Code here, for brevity not shown.
+// TODO: Add your helper functions from VS Code here
 
 async function runAgent(goal: string) {
-  // Kinopya mula sa VS Code mo: detectKind, extractTone, generateFacebookPost, atbp.
-  // Tiyaking gumagamit ng client.chat.completions para sa draft/refine.
-  // Tanggalin ang paggamit ng fetch timeout na hindi suportado.
+  // Implementation from your VS Code
+  // This is a placeholder - add your actual implementation
+  return `Generated content for: ${goal}`;
 }
 
 // zod schema for request validation
@@ -64,10 +60,10 @@ const requestCounts = new Map<string, number[]>();
 const RATE_LIMIT = 15;
 const RATE_LIMIT_WINDOW = 60_000;
 
-app.post('/agent', async (req: Request, res: Response) => {
+app.post('/api/generate-content', async (req: Request, res: Response) => {
   const ip = (req.ip || 'unknown').toString();
   const now = Date.now();
-  // linis ng lumang logs
+  // Clean up old logs
   for (const [key, timestamps] of requestCounts.entries()) {
     const updated = timestamps.filter(t => t > now - RATE_LIMIT_WINDOW);
     if (updated.length === 0) requestCounts.delete(key);
@@ -91,17 +87,37 @@ app.post('/agent', async (req: Request, res: Response) => {
   }
 });
 
-// Health check
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', ts: new Date().toISOString() });
+// Health check endpoint
+app.get('/api/health', (_req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
-app.get('/', (req, res) => {
-  res.send('Hello, this is the marketing agent backend!');
+// Status endpoint for the dashboard
+app.get('/api/status', (_req, res) => {
+  res.json({
+    server: 'Online',
+    openai: process.env.OPENAI_API_KEY ? 'Configured' : 'Not configured',
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Always bind to 0.0.0.0 and use Render’s env PORT
+// Fallback for undefined routes - serve the HTML file
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Always bind to 0.0.0.0 and use Render's env PORT
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3002;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Agent API listening at http://0.0.0.0:${PORT}`);
+  console.log(`
+    Marketing Agent Backend running on port ${PORT}
+    Frontend available at: http://localhost:${PORT}
+    API Health check: http://localhost:${PORT}/api/health
+  `);
 });
