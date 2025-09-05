@@ -80,6 +80,10 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', ts: new Date().toISOString() });
 });
 
+app.get('/', (req, res) => {
+  res.send('Hello, this is the marketing agent backend!');
+});
+
 // Always bind to 0.0.0.0 and use Render’s env PORT
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3002;
 app.listen(PORT, '0.0.0.0', () => {
